@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Diagnosis X-Ray Detector</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Diagnosis X-Ray Detector</h1>
+
+        <div class="intro">
+            <p>Welcome! This tool helps detect signs of pneumonia or brain tumors from medical images.</p>
+            <ul>
+                <li><strong>Pneumonia:</strong> Upload a chest X-ray to check for pneumonia or a normal lung.</li>
+                <li><strong>Brain Tumor:</strong> Upload a brain MRI to check for:</li>
+                <ul>
+                    <li>Glioma</li>
+                    <li>Meningioma</li>
+                    <li>Pituitary tumor</li>
+                    <li>No tumor</li>
+                </ul>
+            </ul>
+        </div>
+
+        <div class="model-selector">
+            <label for="modelType">Choose a model:</label>
+            <select id="modelType">
+                <option value="pneumonia">Pneumonia Detection</option>
+                <option value="cancer">Brain Tumor Detection</option>
+            </select>
+        </div>
+
+        <div class="upload-box" id="dropZone">
+            <input type="file" id="fileInput" accept="image/*">
+            <p>Click or drag an image to upload</p>
+            <img id="preview" style="display:none; max-width: 300px; margin-top: 15px;">
+        </div>
+
+        <button id="analyzeBtn" disabled>Analyze</button>
+
+        <div id="results" style="display:none;">
+            <h2>Results</h2>
+            <div id="predictionResults"></div>
+        </div>
+    </div>
+
+    <script>
+        const analyzeBtn = document.getElementById('analyzeBtn');
+        const fileInput = document.getElementById('fileInput');
+        const preview = document.getElementById('preview');
+        const resultsDiv = document.getElementById('results');
+
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files[0]) {
+                preview.src = URL.createObjectURL(e.target.files[0]);
+                preview.style.display = 'block';
+                analyzeBtn.disabled = false;
+            }
+        });
+
+        analyzeBtn.addEventListener('click', async () => {
+            const file = fileInput.files[0];
+            const modelType = document.getElementById('modelType').value;
+
+            const formData = new FormData();
+            formData.append('file', file);
+            formData.append('model_type', modelType);
+
+            analyzeBtn.disabled = true;
+            analyzeBtn.textContent = 'Analyzing...';
+
+            try {
+                const response = await fetch('/predict', {
+                    method: 'POST',
+                    body: formData
+                });
+                const data = await response.json();
+
+                let resultsHTML = `<p><strong>Diagnosis:</strong> ${data.diagnosis}</p>`;
+                for (const [cls, prob] of Object.entries(data.predictions)) {
+                    resultsHTML += `<p>${cls}: ${(prob * 100).toFixed(1)}%</p>`;
+                }
+                resultsHTML += `<div class="reasoning-box"><strong>Why this result?</strong> ${data.reasoning}</div>`;
+
+                document.getElementById('predictionResults').innerHTML = resultsHTML;
+                resultsDiv.style.display = 'block';
+            } catch (error) {
+                alert('Error: ' + error.message);
+            } finally {
+                analyzeBtn.disabled = false;
+                analyzeBtn.textContent = 'Analyze';
+            }
+        });
+    </script>
+</body>
+</html>

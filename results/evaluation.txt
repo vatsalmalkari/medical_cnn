@@ -1,0 +1,4 @@
+Model Evaluation Results
+========================
+Test Loss    : 0.3714
+Test Accuracy: 85.26%
