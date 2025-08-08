@@ -34,7 +34,7 @@ def preprocess_image(image, model_type):
         img_array = (img_array / 127.5) - 1
 
     return np.expand_dims(img_array, axis=0)
-
+app = Flask(__name__, template_folder='../templates')
 @app.route('/')
 def home():
     return render_template('index.html')
